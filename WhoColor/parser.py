@@ -6,7 +6,7 @@
     Kenan Erdogan
 """
 import re
-
+import io
 from .special_markups import SPECIAL_MARKUPS, REGEX_HELPER_PATTERN
 
 
@@ -18,6 +18,7 @@ class WikiMarkupParser(object):
         self.tokens_len = len(tokens)
         # self.revisions = revisions
         self.token = None
+        self.next_special_elem = None
 
         # Saves the current positions
         self._token_index = 0
@@ -29,7 +30,8 @@ class WikiMarkupParser(object):
         self._jumped_elems = set()
 
         # The return values of the parser (error can be an error description)
-        self.extended_wiki_text = ''
+        self.extended_wiki_text = io.StringIO()
+
         self.error = False
         self.present_editors = dict()  # {editor_id: [editor_name, class_name, count], }
         self.conflict_scores = list()
@@ -92,6 +94,8 @@ class WikiMarkupParser(object):
         return end_pos_data
 
     def __get_next_special_element(self):
+        # if self.next_special_elem and self.next_special_elem['start'] > self._wiki_text_pos:
+        #     return self.next_special_elem
         # Get starting position of next special markup element
         next_ = {}
         for special_markup in SPECIAL_MARKUPS:
@@ -106,6 +110,7 @@ class WikiMarkupParser(object):
                     # to be used in __get_special_elem_end - because it has no end regex
                     next_['end'] = next_['start']
                     next_['end_len'] = next_['start_len']
+        self.next_special_elem = next_
         return next_
 
     def __add_spans(self, token, new_span=True):
@@ -116,11 +121,11 @@ class WikiMarkupParser(object):
         If there is not an opened span and new_span is do nothing (no_spans=True)
         """
         if self._open_span is True:
-            self.extended_wiki_text += '</span>'
+            self.extended_wiki_text.write('</span>')
             self._open_span = False
         if new_span is True:
-            self.extended_wiki_text += '<span class="editor-token token-editor-{}" id="token-{}">'.\
-                                       format(token['class_name'], self._token_index)
+            self.extended_wiki_text.write('<span class="editor-token token-editor-{}" id="token-{}">'.\
+                                       format(token['class_name'], self._token_index))
             self._open_span = True
 
     def __parse_wiki_text(self, add_spans=True, special_elem=None, no_jump=False):
@@ -151,7 +156,7 @@ class WikiMarkupParser(object):
             if self.token is None:
                 # No token left to parse
                 # Add everything that's left to the end of the extended wiki text
-                self.extended_wiki_text += self.wiki_text[self._wiki_text_pos: len(self.wiki_text)]
+                self.extended_wiki_text.write(self.wiki_text[self._wiki_text_pos: len(self.wiki_text)])
                 self._wiki_text_pos = len(self.wiki_text)  # - 1
                 return True
 
@@ -183,7 +188,7 @@ class WikiMarkupParser(object):
             if special_elem_end and special_elem_end['end'] < self.token['end']:
                 # Special element has been matched before the token
                 # => Set position to special element's end
-                self.extended_wiki_text += self.wiki_text[self._wiki_text_pos:special_elem_end['end']]
+                self.extended_wiki_text.write(self.wiki_text[self._wiki_text_pos:special_elem_end['end']])
                 self._wiki_text_pos = special_elem_end['end']
                 return True
 
@@ -192,7 +197,7 @@ class WikiMarkupParser(object):
                 self.__add_spans(self.token)  # close and open span tag
 
             # add remaining token (and possible preceding chars) to resulting altered markup
-            self.extended_wiki_text += self.wiki_text[self._wiki_text_pos:self.token['end']]
+            self.extended_wiki_text.write(self.wiki_text[self._wiki_text_pos:self.token['end']])
             self._wiki_text_pos = self.token['end']
 
             # Increase token index
@@ -202,7 +207,7 @@ class WikiMarkupParser(object):
 
         # Close opened tags
         if self._open_span:
-            self.extended_wiki_text += "</span>"
+            self.extended_wiki_text.write("</span>")
             self._open_span = False
         return True
 
@@ -237,4 +242,5 @@ class WikiMarkupParser(object):
 
         # Remove regex patterns
         self.wiki_text = self.wiki_text.replace(REGEX_HELPER_PATTERN, '\n')
+        self.extended_wiki_text = self.extended_wiki_text.getvalue()
         self.extended_wiki_text = self.extended_wiki_text.replace(REGEX_HELPER_PATTERN, '\n')
