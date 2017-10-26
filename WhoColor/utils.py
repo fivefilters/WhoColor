@@ -143,7 +143,7 @@ class WikiWhoRevContent(object):
     """
     Example usage:
         ww_rev_content = WikiWhoRevContent(page_id=6187)
-        wikiwho_tokens = ww_rev_content.get_tokens()
+        wikiwho_data = ww_rev_content.get_revisions_and_tokens()
     """
     def __init__(self, page_id=None, page_title=None, rev_id=None):
         self.page_id = page_id
@@ -171,7 +171,13 @@ class WikiWhoRevContent(object):
                                'token_id': 'false', 'out': 'true', 'in': 'true'}}
 
     def _make_request(self, data):
-        response = requests.get(**data).json()
+        import requests
+        session = requests.session()
+        # from requests.auth import HTTPBasicAuth
+        # url = 'https://www.wikiwho.net/'
+        # r1 = session.get(url, auth=HTTPBasicAuth('kandy', 'kandhasamy'))
+        session.auth = ('kandy', 'kandhasamy')
+        response = session.get(**data).json()
         return response
 
     def get_revisions_data(self):
