@@ -36,13 +36,13 @@ SPECIAL_MARKUPS = (
     },
     # Reference tags - only start ref tag and attributes.
     # Closing ref is detected by 'General HTML tag' regex
-    {
-        'type': 'block',
-        'start_regex': re.compile(r'<ref'),
-        'end_regex': re.compile(r'>'),
-        'no_spans': True,
-        'no_jump': False
-    },
+    # {
+    #     'type': 'block',
+    #     'start_regex': re.compile(r'<ref'),
+    #     'end_regex': re.compile(r'>'),
+    #     'no_spans': True,
+    #     'no_jump': False
+    # },
     # single <nowiki /> tag
     {
         'type': 'single',
@@ -59,14 +59,20 @@ SPECIAL_MARKUPS = (
         'no_spans': True,
         'no_jump': False
     },
-    # General HTML tag - only for text between < and > (tag name and attributes)
+    # General HTML tag - only for text between <(tag) and > (tag name and attributes)
     {
+        # 'type': 'single',
+        # 'start_regex': re.compile(r'<\/?(ref|blockquote|ul|li)[^>]*>'),
+        # 'end_regex': None,
+        # 'no_spans': True,
+        # 'no_jump': True
         'type': 'block',
-        'start_regex': re.compile(r'<'),
+        'start_regex': re.compile(r'<\/?(ref|h1|h2|h3|h4|h5|h6|p|br|hr|!--|abbr|b|bdi|bdo|blockquote|cite|code|data|del|dfn|em|i|ins|kbd|mark|pre|q|ruby|rt|rp|s|samp|small|strong|sub|sup|time|u|var|wbr|dl|dt|dd|ol|ul|li|div|span|table|tr|td|th|caption)'),
         'end_regex': re.compile(r'>'),
         'no_spans': True,
         'no_jump': False
     },
+
     # Headings
     {
         'type': 'single',
